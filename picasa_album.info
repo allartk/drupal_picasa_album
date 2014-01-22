@@ -1,0 +1,4 @@
+name = Picasa album list
+description = Provides block with albums from a user
+core = 7.x
+dependencies[] = block

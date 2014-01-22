@@ -1,0 +1,98 @@
+<?php
+/**
+ * obtain list of user albums
+ */
+function picasa_album_albums($userid) {
+	$albums = array();
+	$xml = simplexml_load_file('https://picasaweb.google.com/data/feed/api/user/'.$userid);
+	foreach ($xml->entry as $item) {
+		$albums[] = array(
+			'title' => (string) $item->title,		
+			'url' => (string)$item->link[1]['href']
+		);	
+	}	
+	return $albums;	
+}
+
+
+/**
+ * Implements hook_block_info().
+ */
+ function picasa_album_block_info() {
+ 	return array('album_thumbs' => array(
+		'info' => t('Picasa user albums'),
+	)
+	);
+ }
+
+ /**
+  * Implements hook_block_configure().
+  */
+function picasa_album_block_configure($delta = '') {
+	$form = array();
+	if ($delta == 'album_thumbs') {
+		//user
+		$form['picasa_album_user'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Picasa user'),
+			'#default_value' => variable_get('picasa_album_user','someone'),
+			'#required' => TRUE,
+			'#description' => t('The picasa user account whose public albums will be shown in the block')
+		);	
+		//n albums
+		$form['picasa_album_number'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Number of albums'),
+			'#default_value' => variable_get('picasa_album_number',5),
+			'#required' => TRUE,
+			'#description' => t('The maximum number of albums listed')		
+		);	
+		
+		//at random or date order
+		
+	}
+	return $form;	
+	
+}
+
+/**
+ * Implements hook_block_save()
+ */ 
+ function picasa_album_block_save($delta = '', $edit = array()) {
+	if ($delta == 'album_thumbs') {
+		variable_set('picasa_album_user', $edit['picasa_album_user']);
+		variable_set('picasa_album_number', $edit['picasa_album_number']);
+	}
+ }
+ 	
+ 	
+/**
+ * Implements hook_block_view().
+ */
+ function picasa_album_block_view($delta = '') {
+ 	if ($delta == 'album_thumbs') {
+ 		$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
+		return array('content' => theme('picasa_album_thumbs',$variables));
+	}
+ 	
+ }
+ 
+ /**
+  * hook_theme
+  */
+function picasa_album_theme($existing, $type, $theme, $path) {
+	return array(
+		'picasa_album_thumbs' => array('variables' => array('albums' => array()))
+	);
+	
+}
+
+function theme_picasa_album_thumbs($variables) {
+	$albums = $variables['albums'];
+	$output = '<ul>';
+	foreach($albums as $album) {
+		$output .= '<li>'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'</li>';
+	}
+	$output .= '</ul>';
+	return $output;
+}
