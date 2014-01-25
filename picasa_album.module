@@ -1,4 +1,36 @@
 <?php
+
+/**
+ *hook_menu
+ */
+function picasa_album_menu() {
+	$items = array();
+	$items['admin/config/media/picasa_album'] = array(
+		'title' => t('Settings Picasa album'),
+		'type' => MENU_NORMAL_ITEM,
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('picasa_album_settings'),
+		'access arguments' => array('Manage picasa album')
+	);
+	//list of albums
+	$items['picasa_album/albums'] = array(
+		'title' => t('Photo albums'),
+		'type' => MENU_SUGGESTED_ITEM,
+		'page callback' => 'picasa_album_page',
+		'access arguments' => array('access content')
+	);
+	
+	//list of photos in album
+	$items['picasa_album/photos/%'] = array(
+		'title' => t('Picasa album photos'),
+		'type' => MENU_SUGGESTED_ITEM,
+		'page callback' => 'picasa_album_photos',
+		'page arguments' => array(3),
+		'access arguments' => array('access content')
+	);
+	
+	return $items;
+}
 /**
  * obtain list of user albums
  */
@@ -14,12 +46,28 @@ function picasa_album_albums($userid) {
 	return $albums;	
 }
 
+/**
+ * show photos in album
+ */ 
+
+function picasa_album_photos($albumID) {
+		return array('#markup' => 'TODO');			
+}
+
+/**
+ * show albums of user
+ */
+function picasa_album_page() {
+		$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
+		return array('#markup' => theme('picasa_album_list',$variables));		
+}
+
 
 /**
  * Implements hook_block_info().
  */
  function picasa_album_block_info() {
- 	return array('album_thumbs' => array(
+ 	return array('album_list' => array(
 		'info' => t('Picasa user albums'),
 	)
 	);
@@ -30,15 +78,7 @@ function picasa_album_albums($userid) {
   */
 function picasa_album_block_configure($delta = '') {
 	$form = array();
-	if ($delta == 'album_thumbs') {
-		//user
-		$form['picasa_album_user'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Picasa user'),
-			'#default_value' => variable_get('picasa_album_user','someone'),
-			'#required' => TRUE,
-			'#description' => t('The picasa user account whose public albums will be shown in the block')
-		);	
+	if ($delta == 'album_list') {	
 		//n albums
 		$form['picasa_album_number'] = array(
 			'#type' => 'textfield',
@@ -59,7 +99,7 @@ function picasa_album_block_configure($delta = '') {
  * Implements hook_block_save()
  */ 
  function picasa_album_block_save($delta = '', $edit = array()) {
-	if ($delta == 'album_thumbs') {
+	if ($delta == 'album_list') {
 		variable_set('picasa_album_user', $edit['picasa_album_user']);
 		variable_set('picasa_album_number', $edit['picasa_album_number']);
 	}
@@ -70,9 +110,9 @@ function picasa_album_block_configure($delta = '') {
  * Implements hook_block_view().
  */
  function picasa_album_block_view($delta = '') {
- 	if ($delta == 'album_thumbs') {
+ 	if ($delta == 'album_list') {
  		$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
-		return array('content' => theme('picasa_album_thumbs',$variables));
+		return array('content' => theme('picasa_album_list',$variables));
 	}
  	
  }
@@ -82,12 +122,31 @@ function picasa_album_block_configure($delta = '') {
   */
 function picasa_album_theme($existing, $type, $theme, $path) {
 	return array(
-		'picasa_album_thumbs' => array('variables' => array('albums' => array()))
+		'picasa_album_list' => array('variables' => array('albums' => array()))
 	);
 	
 }
 
-function theme_picasa_album_thumbs($variables) {
+/**
+ * settings form module
+ */
+function picasa_album_settings() {
+		$form = array();
+		//user
+		$form['picasa_album_user'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Picasa user'),
+			'#default_value' => variable_get('picasa_album_user','someone'),
+			'#required' => TRUE,
+			'#description' => t('The picasa user account whose public albums will be shown on module pages and blocks')
+		);
+		return system_settings_form($form);		
+}
+
+/**
+ * theme function for title list in block
+ */
+function theme_picasa_album_list($variables) {
 	$albums = $variables['albums'];
 	$output = '<ul>';
 	foreach($albums as $album) {
