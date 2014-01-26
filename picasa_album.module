@@ -38,11 +38,16 @@ function picasa_album_albums($userid) {
 	$albums = array();
 	if($userid) {	
 		$xml = simplexml_load_file('https://picasaweb.google.com/data/feed/api/user/'.$userid);
-		foreach ($xml->entry as $item) {
+		$xml->registerXPathNamespace('d', 'http://www.w3.org/2005/Atom');
+		$entries = $xml->xpath('/d:feed/d:entry');
+		foreach ($entries as $album) {
+			$album->registerXPathNamespace('d', 'http://www.w3.org/2005/Atom');
 			$albums[] = array(
-				'title' => (string) $item->title,		
-				'url' => (string)$item->link[1]['href']
-			);	
+				'id' => $album->id,
+				'title' => $album->title,
+				'url' => $album->xpath('.//d:link[@type="text/html"]')['0']['href'],
+				'thumb' => $album->xpath('.//media:group/media:thumbnail')['0']['url'],
+			);
 		}	
 	}
 	return $albums;	
@@ -60,8 +65,10 @@ function picasa_album_photos($albumID) {
  * show albums of user
  */
 function picasa_album_page() {
-	$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
-	return array('#markup' => theme('picasa_album_list',$variables));		
+	return array(
+		'#albums' => picasa_album_albums(variable_get('picasa_album_user')),
+		'#theme' => 'picasa_album_thumbs'
+	);		
 }
 
 
@@ -128,7 +135,8 @@ function picasa_album_block_configure($delta = '') {
   */
 function picasa_album_theme($existing, $type, $theme, $path) {
 	return array(
-		'picasa_album_list' => array('variables' => array('albums' => array()))
+		'picasa_album_list' => array('variables' => array('albums' => array())),
+		'picasa_album_thumbs' => array('variables' => array('albums' => array()))
 	);
 	
 }
@@ -159,6 +167,22 @@ function theme_picasa_album_list($variables) {
 		$output .= '<li>'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'</li>';
 	}
 	$output .= '</ul>';
+	return $output;
+}
+
+/**
+ * theme function for thumbs
+ */
+function theme_picasa_album_thumbs($variables) {
+	$albums = $variables['albums'];
+	$output = '<div id="picasa_album_thumbs">';
+	foreach($albums as $album) {
+		$output .= '<div class="album_thumb">
+			<img src="'.$album['thumb'].'" alt="thumb">
+			'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'
+			</div>';
+	}
+	$output .= '</div>';
 	return $output;
 }
 
