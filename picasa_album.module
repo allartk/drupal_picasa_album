@@ -179,7 +179,7 @@ function theme_picasa_album_thumbs($variables) {
 	foreach($albums as $album) {
 		$output .= '<div class="album_thumb">
 			<img src="'.$album['thumb'].'" alt="thumb">
-			'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'
+			<p>'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'</p>
 			</div>';
 	}
 	$output .= '</div>';

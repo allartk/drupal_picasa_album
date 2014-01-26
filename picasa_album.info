@@ -1,4 +1,5 @@
-name = Picasa album list
-description = Provides block with albums from a user
+name = Picasa album
+description = Show picasa albums on your website
 core = 7.x
 dependencies[] = block
+stylesheets[all][] = picasa_album.css
