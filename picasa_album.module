@@ -36,13 +36,15 @@ function picasa_album_menu() {
  */
 function picasa_album_albums($userid) {
 	$albums = array();
-	$xml = simplexml_load_file('https://picasaweb.google.com/data/feed/api/user/'.$userid);
-	foreach ($xml->entry as $item) {
-		$albums[] = array(
-			'title' => (string) $item->title,		
-			'url' => (string)$item->link[1]['href']
-		);	
-	}	
+	if($userid) {	
+		$xml = simplexml_load_file('https://picasaweb.google.com/data/feed/api/user/'.$userid);
+		foreach ($xml->entry as $item) {
+			$albums[] = array(
+				'title' => (string) $item->title,		
+				'url' => (string)$item->link[1]['href']
+			);	
+		}	
+	}
 	return $albums;	
 }
 
@@ -51,15 +53,15 @@ function picasa_album_albums($userid) {
  */ 
 
 function picasa_album_photos($albumID) {
-		return array('#markup' => 'TODO');			
+	return array('#markup' => 'TODO');			
 }
 
 /**
  * show albums of user
  */
 function picasa_album_page() {
-		$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
-		return array('#markup' => theme('picasa_album_list',$variables));		
+	$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
+	return array('#markup' => theme('picasa_album_list',$variables));		
 }
 
 
@@ -131,16 +133,16 @@ function picasa_album_theme($existing, $type, $theme, $path) {
  * settings form module
  */
 function picasa_album_settings() {
-		$form = array();
-		//user
-		$form['picasa_album_user'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Picasa user'),
-			'#default_value' => variable_get('picasa_album_user','someone'),
-			'#required' => TRUE,
-			'#description' => t('The picasa user account whose public albums will be shown on module pages and blocks')
-		);
-		return system_settings_form($form);		
+	$form = array();
+	//user
+	$form['picasa_album_user'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Picasa user'),
+		'#default_value' => variable_get('picasa_album_user','someone'),
+		'#required' => TRUE,
+		'#description' => t('The picasa user account whose public albums will be shown on module pages and blocks')
+	);
+	return system_settings_form($form);		
 }
 
 /**
@@ -155,3 +157,13 @@ function theme_picasa_album_list($variables) {
 	$output .= '</ul>';
 	return $output;
 }
+
+/**
+ * hook_permission
+ */ 
+ function picasa_album_permission() {
+	 return array(
+		'Manage picasa album' => array(
+			'title' => 'Administer picasa album module'
+	);
+ }
