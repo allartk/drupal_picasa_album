@@ -113,8 +113,12 @@ function picasa_album_block_configure($delta = '') {
  */
  function picasa_album_block_view($delta = '') {
  	if ($delta == 'album_list') {
- 		$variables['albums'] = picasa_album_albums(variable_get('picasa_album_user'));
-		return array('content' => theme('picasa_album_list',$variables));
+		$block['subject'] = t('Picasa albums');
+		$block['content'] = array(
+            '#theme' => 'picasa_album_list',
+            '#albums' => picasa_album_albums(variable_get('picasa_album_user')),
+        );
+		return $block;
 	}
  	
  }
@@ -165,5 +169,5 @@ function theme_picasa_album_list($variables) {
 	 return array(
 		'Manage picasa album' => array(
 			'title' => 'Administer picasa album module'
-	);
+	));
  }
