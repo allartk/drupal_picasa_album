@@ -23,9 +23,9 @@ function picasa_album_menu() {
 	//list of photos in album
 	$items['picasa_album/photos/%'] = array(
 		'title' => t('Picasa album photos'),
-		'type' => MENU_SUGGESTED_ITEM,
-		'page callback' => 'picasa_album_photos',
-		'page arguments' => array(3),
+		'type' => MENU_CALLBACK,
+		'page callback' => 'picasa_album_photos_page',
+		'page arguments' => array(2),
 		'access arguments' => array('access content')
 	);
 	
@@ -43,7 +43,7 @@ function picasa_album_albums($userid) {
 		foreach ($entries as $album) {
 			$album->registerXPathNamespace('d', 'http://www.w3.org/2005/Atom');
 			$albums[] = array(
-				'id' => $album->id,
+				'id' => $album->xpath('.//gphoto:id')['0'],
 				'title' => $album->title,
 				'url' => $album->xpath('.//d:link[@type="text/html"]')['0']['href'],
 				'thumb' => $album->xpath('.//media:group/media:thumbnail')['0']['url'],
@@ -54,11 +54,35 @@ function picasa_album_albums($userid) {
 }
 
 /**
+ * get list of photos
+ * @return array $photos, each item is an array with the keys content (string image url) and thumbs (array of thumbs available)
+ */ 
+function picasa_album_photos($userid,$albumID) {
+	$photos = array();
+	if($userid && $albumID) {
+		$xml = simplexml_load_file('https://picasaweb.google.com/data/feed/api/user/'.$userid.'/albumid/'.$albumID);
+		$xml->registerXPathNamespace('d', 'http://www.w3.org/2005/Atom');
+		$entries = $xml->xpath('/d:feed/d:entry');
+		foreach ($entries as $photo) {
+			$photo->registerXPathNamespace('d', 'http://www.w3.org/2005/Atom');
+			$photos[] = array(
+				'content' => $photo->xpath('.//media:group/media:content')['0']['url'],
+				'thumbs' => $photo->xpath('.//media:group/media:thumbnail'),
+			);
+		}
+	}
+	return $photos;
+} 
+
+/**
  * show photos in album
  */ 
 
-function picasa_album_photos($albumID) {
-	return array('#markup' => 'TODO');			
+function picasa_album_photos_page($albumID) {
+	return array(
+		'#photos' => picasa_album_photos(variable_get('picasa_album_user'),$albumID),
+		'#theme' => 'picasa_album_photo_thumbs',
+	);			
 }
 
 /**
@@ -136,7 +160,8 @@ function picasa_album_block_configure($delta = '') {
 function picasa_album_theme($existing, $type, $theme, $path) {
 	return array(
 		'picasa_album_list' => array('variables' => array('albums' => array())),
-		'picasa_album_thumbs' => array('variables' => array('albums' => array()))
+		'picasa_album_thumbs' => array('variables' => array('albums' => array())),
+		'picasa_album_photo_thumbs' => array('variables' => array('photos' => array()))
 	);
 	
 }
@@ -164,7 +189,7 @@ function theme_picasa_album_list($variables) {
 	$albums = $variables['albums'];
 	$output = '<ul>';
 	foreach($albums as $album) {
-		$output .= '<li>'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'</li>';
+		$output .= '<li>'.l($album['title'],'picasa_album/photos/'.$album['id']).'</li>';
 	}
 	$output .= '</ul>';
 	return $output;
@@ -179,11 +204,23 @@ function theme_picasa_album_thumbs($variables) {
 	foreach($albums as $album) {
 		$output .= '<div class="album_thumb">
 			<img src="'.$album['thumb'].'" alt="thumb">
-			<p>'.l($album['title'],$album['url'],array('attributes' =>array('target' => '_blank'))).'</p>
+			<p>'.l($album['title'],'picasa_album/photos/'.$album['id']).'</p>
 			</div>';
 	}
 	$output .= '</div>';
 	return $output;
+}
+
+function theme_picasa_album_photo_thumbs($variables) {
+	$photos = $variables['photos'];
+	$output = '<div id="picasa_album_thumbs">';
+	foreach($photos as $photo) {
+		$output .= '<div class="album_thumb">
+			<img src="'.$photo['thumbs']['1']['url'].'" alt="thumb">			
+			</div>';
+	}
+	$output .= '</div>';
+	return $output;	
 }
 
 /**
