@@ -2,4 +2,6 @@ name = Picasa album
 description = Show picasa albums on your website
 core = 7.x
 dependencies[] = block
+dependencies[] = libraries
+dependencies[] = colorbox
 stylesheets[all][] = picasa_album.css
