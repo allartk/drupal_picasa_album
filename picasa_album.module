@@ -214,10 +214,16 @@ function theme_picasa_album_thumbs($variables) {
 function theme_picasa_album_photo_thumbs($variables) {
 	$photos = $variables['photos'];
 	$output = '<div id="picasa_album_thumbs">';
+	$link_opt = array(
+				"html"=>TRUE,
+				"attributes"=>	
+					array(
+					"class"=>array("colorbox"),
+					"rel" => "gallery-all"),					
+				);
 	foreach($photos as $photo) {
 		$output .= '<div class="album_thumb">
-			'.l('<img src="'.$photo['thumbs']['1']['url'].'" alt="thumb">',$photo['content'],array("html"=>TRUE)).'
-			</div>';
+			'.l('<img src="'.$photo['thumbs']['1']['url'].'" alt="thumb">',$photo['content'],$link_opt).'</div>';
 	}
 	$output .= '</div>';
 	return $output;	
